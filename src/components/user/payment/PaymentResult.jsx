@@ -6,7 +6,7 @@ function PaymentResult() {
     const location = useLocation();
     const navigate = useNavigate();
     const query = new URLSearchParams(location.search);
-    const subscriptionId = query.get('subscription_id');
+    const subscriptionId = query.get('paymentId');
     const error = query.get('error');
 
     const [payment, setPayment] = useState(null);
@@ -23,12 +23,14 @@ function PaymentResult() {
                 setLoading(true);
                 setErrorMessage(null);
                 try {
-                    const response = await axios.get(`http://localhost:8000/api/payment/getPayment/${subscriptionId}`, {
+                    const response = await axios.get(`http://localhost:3000/api/payment/details/${subscriptionId}`, {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     });
-                    setPayment(response.data);
+                    console.log("Payment details:", response.data);
+
+                    setPayment(response.data.data);
                 } catch (err) {
                     console.error("Error fetching payment details:", err);
                     setErrorMessage('Không thể tải thông tin chi tiết thanh toán. Vui lòng kiểm tra lịch sử giao dịch của bạn.');
@@ -75,7 +77,7 @@ function PaymentResult() {
                         </p>
                         <p className="text-gray-300 flex justify-between">
                             <span className="font-semibold text-gray-100">Tên gói:</span>
-                            <span>{payment.subscription?.package?.name ?? 'N/A'}</span>
+                            <span>{payment.package_name ?? 'N/A'}</span>
                         </p>
                         <p className="text-gray-300 flex justify-between">
                             <span className="font-semibold text-gray-100">Giá:</span>
@@ -92,8 +94,8 @@ function PaymentResult() {
                         <p className="text-gray-300 flex justify-between">
                             <span className="font-semibold text-gray-100">Thời hạn gói:</span>
                             <span>
-                                {payment.subscription?.start_date ? new Date(payment.subscription.start_date).toLocaleDateString('vi-VN') : 'N/A'} -{' '}
-                                {payment.subscription?.end_date ? new Date(payment.subscription.end_date).toLocaleDateString('vi-VN') : 'N/A'}
+                                {payment.subscription_details?.start_date ? new Date(payment.subscription_details.start_date).toLocaleDateString('vi-VN') : 'N/A'} -{' '}
+                                {payment.subscription_details?.end_date ? new Date(payment.subscription_details.end_date).toLocaleDateString('vi-VN') : 'N/A'}
                             </span>
                         </p>
                     </div>

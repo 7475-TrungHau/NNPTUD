@@ -16,13 +16,15 @@ function Home() {
 
     useEffect(() => {
         document.title = "Trang chủ";
+        console.log(localStorage.getItem('user'));
+
     }, []);
     useEffect(() => {
         const fetchBannerMovies = async () => {
             try {
                 const res = await getMovies({ limit: 10, sort_by: "created_at", sort_dir: "desc" });
-                console.log(res.data);
-                setBannerMovies(res.data);
+                //console.log(res.data.data);
+                setBannerMovies(res.data.data);
             } catch (error) {
                 console.log("Loi lay movie: " + error);
             }
@@ -30,8 +32,10 @@ function Home() {
 
         const fetchMovies = async () => {
             try {
-                const res = await getMovies({ limit: 20, sort_by: "view", sort_dir: "desc", genre: "hanh-dong", category: "series" });
-                setActionMovies(res.data);
+                const res = await getMovies({ limit: 20 });
+                console.log("fetch movie Home: ", res.data.data);
+
+                setActionMovies(res.data.data);
             } catch (error) {
                 console.log("Loi lay movie: " + error);
             }
@@ -40,9 +44,9 @@ function Home() {
         const fetchTopMovie = async () => {
             try {
                 const res = await getMovies({ limit: 10, sort_by: "view", sort_dir: "desc" });
-                console.log("Loi", res.data);
+                console.log("Loi", res.data.data);
 
-                setTopMovie(res.data);
+                setTopMovie(res.data.data);
             } catch (error) {
                 console.log("Loi lay Top movie: " + error);
             }

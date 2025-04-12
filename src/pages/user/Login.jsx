@@ -29,7 +29,7 @@ const Login = () => {
             setToken(response.data.token);
             success("Đăng nhập thành công! <br/> Bạn sẽ được chuyển hướng đến trang chủ", 4000);
             setTimeout(() => {
-                navigate("/admin");
+                navigate("/");
             }, 3000);
         } catch (err) {
             const errorMessage = err.response?.data?.message || "Đăng nhập thất bại!";

@@ -46,6 +46,8 @@ const Slider = ({ data, title, icons, banner, number, type, id }) => {
     }, [currentSlide, data]);
 
     const handleClick = (item) => {
+        console.log("item Slider: ", item);
+
         const hasBasicPackage = item.packages.some(pkg => pkg.name === packageNotBanner);
 
         if (hasBasicPackage) {

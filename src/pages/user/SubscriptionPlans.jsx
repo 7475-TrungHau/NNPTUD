@@ -20,12 +20,14 @@ function SubscriptionPlans() {
 
         const fetchPlans = async () => {
             try {
-                const response = await axios.get('http://localhost:8000/api/payment/packages', {
+                const response = await axios.get('http://localhost:3000/api/payment/packages', {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                setPlans(response.data);
+                console.log("response: ", response.data);
+
+                setPlans(response.data.data);
                 setLoading(false);
             } catch (err) {
                 setError('Không thể tải danh sách gói');
@@ -47,22 +49,23 @@ function SubscriptionPlans() {
     const handleConfirmPayment = async () => {
         if (!selectedPlan) return;
 
+
         try {
-            const response = await axios.get(`http://localhost:8000/api/payment/vnpay/${selectedPlan.id}`, {
+            const response = await axios.get(`http://localhost:3000/api/payment/create_vnpay_url/${selectedPlan.id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-
-            if (response.data.status === 'success') {
+            console.log("plan: ", response.data);
+            if (response.data.success === true) {
                 console.log('Redirecting to payment URL:', response.data);
 
-                window.location.href = response.data.url;
+                window.location.href = response.data.data.url;
             } else {
                 alert('Có lỗi khi khởi tạo thanh toán');
             }
         } catch (error) {
-            console.error('Error initiating payment:', error);
+            console.error('Error initiating payment:', error.message);
             alert('Không thể kết nối đến cổng thanh toán');
         }
     };
@@ -101,7 +104,7 @@ function SubscriptionPlans() {
                             </p>
                             <ul className="space-y-2 mb-8 flex-grow">
                                 {plan.features ? (
-                                    plan.features.split(/,|\n/).map((feature, index) => (
+                                    plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-center">
                                             <svg
                                                 className="w-5 h-5 text-green-500 mr-2 flex-shrink-0"

@@ -1,10 +1,14 @@
 @import "tailwindcss";
 
 
-body {
+.app-container {
     font-family: 'Nunito', sans-serif;
     width: 80%;
     margin: 0 auto;
+    background-color: black;
+}
+
+body {
     background-color: black;
 }
 

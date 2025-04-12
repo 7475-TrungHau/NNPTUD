@@ -8,7 +8,7 @@ import FavoriteHeart from "@components/common/Button/FavoriteHeart";
 import Slider from "@components/user/Slider/Slider";
 import { useParams, Link } from "react-router-dom";
 import { getMovie, getMovies, postRateMovie } from "@/Services/apiService";
-import { getUserProfileData } from "../../services/authService";
+import { getUserData } from "@/Services/apiService";
 import { extractCountryFromGenres } from "../../utils/stringUtils";
 import EpisodeSlider from "@components/user/Slider/EpisodeSlider";
 import { useToast } from "../../context/ToastContext";
@@ -45,14 +45,14 @@ function PlayMovie() {
 
                 const res = await getMovie(slug);
                 console.log("movie: ", res.data);
-                console.log("movie ep: ", res.data.episodes);
-                setMovie(res.data);
-                setEpisodes(res.data.episodes);
-                setInitialRating(res.data.rating);
-                setTotalRating(res.data.ratings_count);
+                console.log("movie ep: ", res.data.data.episodes);
+                setMovie(res.data.data);
+                setEpisodes(res.data.data.episodes);
+                setInitialRating(res.data.data.rating);
+                setTotalRating(res.data.data.ratings_count);
 
             } catch (error) {
-                console.log("Loi lay movie : " + error);
+                console.log("Loi lay movie : " + error.message);
             }
         };
         const fetchAnimeJapan = async () => {
@@ -71,19 +71,19 @@ function PlayMovie() {
 
     useEffect(() => {
         const fetchUserRating = async () => {
-            if (!movie?.id) return; // Ensure movie.id exists before fetching
+            if (!movie?._id) return;
             try {
-                const res = await getUserProfileData(`ratings/${movie.id}`);
+                const res = await getUserData(`rating/${movie._id}`);
                 console.log(res.data.message + "User rating: ", res.data);
                 setUserRating(res.data.rating);
             } catch (error) {
-                console.error("Loi lay rating: ", error);
+                console.error("Loi lay rating: ", error.message);
             }
         };
-        if (localStorage.getItem("token") && movie?.id) {
+        if (localStorage.getItem("token") && movie?._id) {
             fetchUserRating();
         }
-    }, [movie?.id, localStorage.getItem("token")])
+    }, [movie?._id, localStorage.getItem("token")])
 
     useEffect(() => {
         if (tap) {
@@ -102,7 +102,7 @@ function PlayMovie() {
 
         try {
             if (localStorage.getItem("token")) {
-                const res = await postRateMovie(movie.id, { rating: newRating });
+                const res = await postRateMovie(movie._id, { rating: newRating });
                 setInitialRating(res.data.rating);
                 setTotalRating(res.data.total_rating);
                 success(res.data.message, 10000);
@@ -128,10 +128,10 @@ function PlayMovie() {
 
 
     // Add 'name' field to each episode and create a new array
-    const episodesWithName = episodes.map(ep => ({
-        ...ep,
-        name: ep.title
-    }));
+    // const episodesWithName = episodes.map(ep => ({
+    //     ...ep,
+    //     name: ep.title
+    // }));
 
     return (
         <div className="w-full border  mt-18" >
@@ -160,7 +160,7 @@ function PlayMovie() {
                             }
                         </p>
                         <FontAwesomeIcon icon={faCircle} className="text-white w-1 h-1" />
-                        <p>{extractCountryFromGenres(movie.genres) || "Không có thông tin quốc gia"}</p>
+                        <p>{movie.country || "Không có thông tin quốc gia"}</p>
                         <FontAwesomeIcon icon={faCircle} className="text-white w-1 h-1" />
                         <p>Tập {episode?.episode_number} /{movie.episodes_count}</p>
                         <FontAwesomeIcon icon={faCircle} className="text-white w-1 h-1" />

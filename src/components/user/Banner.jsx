@@ -83,7 +83,7 @@ const Banner = ({ data, imgUrlBase }) => {
         <div className="banner relative w-full  mt-20" style={{ height: `calc(100vh - 80px)` }}>
             {/* Phần hình ảnh */}
             <div className="relative w-full h-full overflow-hidden">
-                {movies.map((movie, index) => (
+                {movies && movies?.map((movie, index) => (
                     <div
                         key={movie._id}
                         className={`absolute w-full h-full transition-opacity duration-1000 ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
@@ -109,7 +109,7 @@ const Banner = ({ data, imgUrlBase }) => {
                             <FontAwesomeIcon icon={faCircle} className='w-1 h-1 px-2' />
                             <p>{movies[currentSlide].episodes_count + " " + "tập"}</p>
                             <FontAwesomeIcon icon={faCircle} className='w-1 h-1 px-2' />
-                            <p>{extractCountryFromGenres(movies[currentSlide].genres ?? "Quốc gia")}</p>
+                            <p>{movies[currentSlide].country ?? "Quốc gia"}</p>
                             <FontAwesomeIcon icon={faCircle} className='w-1 h-1 px-2' />
                             <p>{movies[currentSlide].type === "series" ? "Series" : "Movie"} </p>
                         </div>

@@ -78,10 +78,10 @@ const movieSchema = new Schema({
         ref: 'Category',
         default: null,
     },
-    packages: [{ // Renamed from package to packages
+    packages: [{
         type: Schema.Types.ObjectId,
         ref: 'Package',
-        default: [], // Changed default from null to []
+        default: [],
     }]
 }, {
     timestamps: true,

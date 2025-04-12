@@ -4,9 +4,9 @@ const fs = require('fs');
 const os = require('os');
 const { pipeline } = require('stream/promises');
 
-// Ensure directories exist
+
 const thumbnailDir = path.join(__dirname, '../public/thumbnails/episodes');
-const videoDir = path.join(__dirname, '../public/videos'); // Assuming videos are stored here
+const videoDir = path.join(__dirname, '../public/videos');
 
 if (!fs.existsSync(thumbnailDir)) {
     fs.mkdirSync(thumbnailDir, { recursive: true });
@@ -15,7 +15,7 @@ if (!fs.existsSync(videoDir)) {
     fs.mkdirSync(videoDir, { recursive: true });
 }
 
-// Configure storage for thumbnails
+
 const thumbnailStorage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, thumbnailDir);
@@ -26,20 +26,19 @@ const thumbnailStorage = multer.diskStorage({
     }
 });
 
-// Configure storage for videos
+
 const videoStorage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, videoDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        // Use original filename for videos if preferred, or generate unique names
-        // cb(null, file.originalname); // Example: using original name
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)); // Example: unique name
+
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
 
-// File filter for images
+
 const imageFileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -48,7 +47,7 @@ const imageFileFilter = (req, file, cb) => {
     }
 };
 
-// File filter for videos
+
 const videoFileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('video/')) {
         cb(null, true);
@@ -57,9 +56,9 @@ const videoFileFilter = (req, file, cb) => {
     }
 };
 
-// Create multer instance to handle both fields
+
 const uploadEpisodeFiles = multer({
-    storage: multer.diskStorage({ // Use separate storage logic within fields if needed, or a common one
+    storage: multer.diskStorage({
         destination: (req, file, cb) => {
             if (file.fieldname === 'thumbnailFile') {
                 cb(null, thumbnailDir);
@@ -84,25 +83,25 @@ const uploadEpisodeFiles = multer({
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024 * 1024, // Max size for any file (adjust video limit here)
-        files: 2 // Allow max 2 files (one thumbnail, one video)
+        fileSize: 5 * 1024 * 1024 * 1024,
+        files: 2
     }
 }).fields([
     { name: 'thumbnailFile', maxCount: 1 },
     { name: 'videoFile', maxCount: 1 }
 ]);
 
-// Middleware function to use in routes
+
 const handleUploads = (req, res, next) => {
     uploadEpisodeFiles(req, res, (err) => {
         if (err instanceof multer.MulterError) {
-            // A Multer error occurred when uploading.
+
             return res.status(400).json({ success: false, message: `Lỗi Multer: ${err.message}` });
         } else if (err) {
-            // An unknown error occurred when uploading.
+
             return res.status(400).json({ success: false, message: `Lỗi tải file: ${err.message}` });
         }
-        // Everything went fine.
+
         next();
     });
 };

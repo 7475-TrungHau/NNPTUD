@@ -31,7 +31,7 @@ const commentSchema = new Schema({
         required: true,
         trim: true
     },
-    deletedAt: { // Cho soft delete
+    deletedAt: {
         type: Date,
         default: null,
         index: true

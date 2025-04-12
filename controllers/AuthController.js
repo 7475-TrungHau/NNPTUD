@@ -1,15 +1,16 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { User, PasswordResetToken } = require('../models');
+const { User, PasswordResetToken, Package } = require('../models');
 const { sendEmail } = require('../utils/email');
+const Subscription = require('../models/Subscription');
 
-// Hàm kiểm tra mật khẩu mạnh
+
 const isStrongPassword = (password) => {
-    // Ít nhất 8 ký tự
+
     if (password.length < 8) return false;
 
-    // Kiểm tra có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt
+
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -18,7 +19,7 @@ const isStrongPassword = (password) => {
     return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
 };
 
-// Hàm tạo mã OTP 6 chữ số
+
 const generateOTP = () => {
     return crypto.randomInt(100000, 999999).toString();
 };
@@ -27,7 +28,7 @@ const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
-        // Kiểm tra dữ liệu đầu vào
+
         if (!username || !email || !password) {
             return res.status(400).json({
                 success: false,
@@ -35,7 +36,7 @@ const register = async (req, res) => {
             });
         }
 
-        // Kiểm tra email hợp lệ
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return res.status(400).json({
@@ -44,7 +45,7 @@ const register = async (req, res) => {
             });
         }
 
-        // Kiểm tra mật khẩu mạnh
+
         if (!isStrongPassword(password)) {
             return res.status(400).json({
                 success: false,
@@ -52,13 +53,12 @@ const register = async (req, res) => {
             });
         }
 
-        // Kiểm tra username và email đã tồn tại chưa
+
         const existingUser = await User.findOne({
             $or: [{ username }, { email }]
         });
 
         if (existingUser) {
-            // Xác định chính xác lỗi là username hay email
             if (existingUser.username === username) {
                 return res.status(400).json({
                     success: false,
@@ -72,25 +72,36 @@ const register = async (req, res) => {
             }
         }
 
-        // Mã hóa mật khẩu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo user mới
+
+
+
         const newUser = new User({
             username,
             email,
             password: hashedPassword,
         });
 
-        // Lưu vào database
         await newUser.save();
+        const package = await Package.findOne({ name: 'Basic' }).select('_id duration_days price');
+        if (package) {
+            Subscription.create({
+                user: newUser._id,
+                package: package._id,
+                start_date: new Date(),
+                end_date: package.duration_days ? new Date(Date.now() + package.duration_days * 24 * 60 * 60 * 1000) : null,
+                status: 'active'
+            });
+        }
+
         const token = jwt.sign({
             id: newUser._id,
             role: newUser.role,
             username: newUser.username
         }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        // Trả về kết quả thành công
+
         res.status(201).json({
             success: true,
             message: 'Đăng ký tài khoản thành công',
@@ -114,7 +125,7 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Kiểm tra dữ liệu đầu vào
+
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -122,14 +133,14 @@ const login = async (req, res) => {
             });
         }
 
-        // Tìm user theo username hoặc email
+
         const user = await User.findOne({
             $or: [
                 { email: email },
             ]
         });
 
-        // Nếu không tìm thấy user
+
         if (!user) {
             return res.status(400).json({
                 success: false,
@@ -137,7 +148,7 @@ const login = async (req, res) => {
             });
         }
 
-        // Kiểm tra mật khẩu
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({
@@ -146,7 +157,7 @@ const login = async (req, res) => {
             });
         }
 
-        // Tạo JWT token
+
         const token = jwt.sign(
             {
                 id: user._id,
@@ -157,7 +168,7 @@ const login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        // Trả về thông tin đăng nhập thành công
+
         res.json({
             success: true,
             message: 'Đăng nhập thành công',
@@ -182,7 +193,7 @@ const login = async (req, res) => {
 
 const me = async (req, res) => {
     try {
-        // Lấy thông tin user từ database (trừ password)
+
         const user = await User.findById(req.user.id)
             .select('-password')
             .populate('favorites', 'title poster_url slug');
@@ -192,16 +203,37 @@ const me = async (req, res) => {
                 message: 'Không tìm thấy thông tin người dùng'
             });
         }
+        let packages = [];
+        const Subscriptions = await Subscription.find({ user: user._id }).lean();
+        const activeSubscriptions = Subscriptions.filter(sub => sub.status === 'active');
+        if (activeSubscriptions.length > 0) {
+            packages = await Package.find({
+                _id: { $in: activeSubscriptions.map(sub => sub.package) }
+            }).select('name price _id');
+            user.packages = packages;
+        } else {
+            packages = [];
+        }
+
 
         res.status(200).json({
             success: true,
-            user: user
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role,
+                avatar: user.avatar,
+                favorites: user.favorites,
+                packages: packages
+            }
         });
     } catch (err) {
         console.error('Get user profile error:', err);
         res.status(500).json({
             success: false,
-            message: 'Lỗi server, vui lòng thử lại sau'
+            message: 'Lỗi server, vui lòng thử lại sau' + err.message
         });
     }
 };
@@ -215,26 +247,26 @@ const forgotPassword = async (req, res) => {
 
         const user = await User.findOne({ email });
         if (!user) {
-            // Trả về thành công giả để tránh lộ thông tin email có tồn tại hay không
+
             return res.status(200).json({ success: true, message: 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được mã đặt lại mật khẩu.' });
         }
 
-        // Tạo mã OTP
-        const otp = generateOTP();
-        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // Hết hạn sau 10 phút
 
-        // Xóa token cũ (nếu có) cho email này
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+
         await PasswordResetToken.deleteMany({ email: user.email });
 
-        // Lưu token mới vào DB
+
         const resetToken = new PasswordResetToken({
             email: user.email,
-            token: otp, // Lưu OTP trực tiếp (cân nhắc mã hóa nếu cần bảo mật cao hơn)
+            token: otp,
             expiresAt: expiresAt,
         });
         await resetToken.save();
 
-        // Gửi email chứa OTP
+
         const subject = 'Yêu cầu đặt lại mật khẩu';
         const textContent = `Mã xác thực đặt lại mật khẩu của bạn là: ${otp}. Mã này sẽ hết hạn sau 10 phút.`;
         const htmlContent = `<p>Mã xác thực đặt lại mật khẩu của bạn là: <strong>${otp}</strong></p><p>Mã này sẽ hết hạn sau 10 phút.</p>`;
@@ -259,14 +291,14 @@ const verifyResetToken = async (req, res) => {
         const resetToken = await PasswordResetToken.findOne({
             email: email,
             token: token,
-            expiresAt: { $gt: Date.now() } // Kiểm tra token còn hạn
+            expiresAt: { $gt: Date.now() }
         });
 
         if (!resetToken) {
             return res.status(400).json({ success: false, message: 'Mã xác thực không hợp lệ hoặc đã hết hạn.' });
         }
 
-        // Token hợp lệ
+
         res.status(200).json({ success: true, message: 'Mã xác thực hợp lệ.' });
 
     } catch (err) {
@@ -283,7 +315,7 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email, mã xác thực và mật khẩu mới.' });
         }
 
-        // Kiểm tra mật khẩu mới có mạnh không
+
         if (!isStrongPassword(newPassword)) {
             return res.status(400).json({
                 success: false,
@@ -291,7 +323,7 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Xác thực token
+
         const resetToken = await PasswordResetToken.findOne({
             email: email,
             token: token,
@@ -302,21 +334,21 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Mã xác thực không hợp lệ hoặc đã hết hạn.' });
         }
 
-        // Tìm user
+
         const user = await User.findOne({ email: email });
         if (!user) {
-            // Trường hợp hiếm gặp nếu user bị xóa sau khi yêu cầu reset
+
             return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng.' });
         }
 
-        // Mã hóa mật khẩu mới
+
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Cập nhật mật khẩu user
+
         user.password = hashedPassword;
         await user.save();
 
-        // Xóa token đã sử dụng
+
         await PasswordResetToken.deleteOne({ _id: resetToken._id });
 
         res.status(200).json({ success: true, message: 'Đặt lại mật khẩu thành công.' });

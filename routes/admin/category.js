@@ -10,8 +10,8 @@ router.post(
     '/',
     authorize('admin'),
     [
-        body('name').notEmpty().withMessage('Name is required'),
-        body('slug').notEmpty().withMessage('Slug is required')
+        body('name').notEmpty().withMessage('Tên là bắt buộc'),
+        body('slug').notEmpty().withMessage('Slug là bắt buộc')
     ],
     CategoryController.store
 );
@@ -20,8 +20,8 @@ router.put(
     '/:id',
     authorize('admin'),
     [
-        body('name').notEmpty().withMessage('Name is required'),
-        body('slug').notEmpty().withMessage('Slug is required')
+        body('name').notEmpty().withMessage('Tên là bắt buộc'),
+        body('slug').notEmpty().withMessage('Slug là bắt buộc')
     ],
     CategoryController.update
 );

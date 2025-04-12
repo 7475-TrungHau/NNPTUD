@@ -26,9 +26,9 @@ const historySchema = new Schema({
     timestamps: false
 });
 
-// Khóa chính kết hợp logic
+
 historySchema.index({ user: 1, episode: 1 }, { unique: true });
-// Index để lấy lịch sử xem gần nhất
+
 historySchema.index({ user: 1, last_watched_at: -1 });
 
 

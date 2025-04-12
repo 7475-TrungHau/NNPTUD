@@ -30,7 +30,7 @@ const packageSchema = new Schema({
         type: Boolean,
         default: true
     },
-    movies: [{ // Added movies field for many-to-many relationship
+    movies: [{
         type: Schema.Types.ObjectId,
         ref: 'Movie',
         default: []

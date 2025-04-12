@@ -5,23 +5,23 @@ const { body } = require('express-validator');
 const multer = require('multer');
 const authorize = require('../../middlewares/authorize');
 
-// Configure multer for file uploads
+
 const upload = multer({
-    dest: 'public/uploads/temp/', // Add destination for temporary files
+    dest: 'public/uploads/temp/',
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
+        fileSize: 5 * 1024 * 1024,
     },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Only image files are allowed!'), false);
+            cb(new Error('Chỉ cho phép file hình ảnh!'), false);
         }
     }
 });
 
 
-// CRUD Routes
+
 router.get('/', authorize('admin'), MovieController.index);
 router.get('/create', authorize('admin'), MovieController.create);
 router.get('/:id', authorize('admin'), MovieController.getMovieById);
@@ -35,18 +35,18 @@ router.post(
         { name: 'trailer', maxCount: 1 }
     ]),
     [
-        body('slug').trim().notEmpty().withMessage('Slug is required'),
-        body('name').trim().notEmpty().withMessage('Name is required'),
+        body('slug').trim().notEmpty().withMessage('Slug là bắt buộc'),
+        body('name').trim().notEmpty().withMessage('Tên là bắt buộc'),
         body('type')
             .trim()
             .isIn(['movie', 'series'])
-            .withMessage('Type must be either "movie" or "series"'),
+            .withMessage('Loại phải là "movie" hoặc "series"'),
         body('category')
             .trim()
             .isMongoId()
-            .withMessage('Category must be a valid MongoDB ID')
+            .withMessage('Danh mục phải là ID MongoDB hợp lệ')
     ],
-    (req, res, next) => MovieController.store(req, res, next) // Pass next
+    (req, res, next) => MovieController.store(req, res, next)
 );
 router.get('/:id/edit', authorize('admin'), MovieController.edit);
 router.put(
@@ -58,13 +58,13 @@ router.put(
         { name: 'trailer', maxCount: 1 }
     ]),
     [
-        body('slug').notEmpty().withMessage('Slug is required'),
-        body('name').notEmpty().withMessage('Name is required'),
-        body('type').isIn(['movie', 'series']).withMessage('Invalid type'),
-        body('category').isMongoId().withMessage('Invalid category')
+        body('slug').notEmpty().withMessage('Slug là bắt buộc'),
+        body('name').notEmpty().withMessage('Tên là bắt buộc'),
+        body('type').isIn(['movie', 'series']).withMessage('Loại không hợp lệ'),
+        body('category').isMongoId().withMessage('Danh mục không hợp lệ')
     ],
-    (req, res, next) => MovieController.update(req, res, next) // Wrap in arrow function and pass next
+    (req, res, next) => MovieController.update(req, res, next)
 );
-router.delete('/:id', authorize('admin'), (req, res, next) => MovieController.destroy(req, res, next)); // Wrap in arrow function and pass next
+router.delete('/:id', authorize('admin'), (req, res, next) => MovieController.destroy(req, res, next));
 
 module.exports = router;

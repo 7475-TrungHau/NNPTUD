@@ -53,9 +53,9 @@ class MovieController {
                 }
             });
         } catch (error) {
-            console.error('Error in movie index:', error);
+            console.error('Lỗi lấy danh sách phim:', error);
             return res.status(500).json({
-                message: 'Error loading movies',
+                message: 'Lỗi tải danh sách phim',
                 error: error.message
             });
         }
@@ -68,7 +68,7 @@ class MovieController {
             if (!movie) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Movie not found'
+                    message: 'Không tìm thấy phim'
                 });
             }
             const episodeCount = await Episode.countDocuments({ movie: movie._id });
@@ -79,10 +79,10 @@ class MovieController {
                 movie: movieObj
             });
         } catch (error) {
-            console.error('Error in getMovieById:', error);
+            console.error('Lỗi lấy phim theo ID:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Error loading movie: ' + error.message,
+                message: 'Lỗi tải phim: ' + error.message,
                 error: error.message
             });
         }
@@ -93,9 +93,9 @@ class MovieController {
             const categories = await Category.find();
             return res.json({ categories });
         } catch (error) {
-            console.error('Error in movie create form:', error);
+            console.error('Lỗi form tạo phim:', error);
             return res.status(500).json({
-                message: 'Error loading create form',
+                message: 'Lỗi tải form tạo phim',
                 error: error.message
             });
         }
@@ -106,14 +106,14 @@ class MovieController {
             const publicBasePath = path.join(__dirname, '../../public');
             const targetFolder = path.join(publicBasePath, folder);
 
-            // Create directory if it doesn't exist
+
             if (!fs.existsSync(targetFolder)) {
                 fs.mkdirSync(targetFolder, { recursive: true });
             }
 
-            // Check if file was uploaded
+
             if (req.files && req.files[fieldName] && req.files[fieldName][0]) {
-                // New file uploaded - delete the old one if it exists
+
                 if (existingUrl && !existingUrl.startsWith('http')) {
                     const oldFilePath = path.join(publicBasePath, existingUrl);
                     if (fs.existsSync(oldFilePath)) {
@@ -121,16 +121,16 @@ class MovieController {
                     }
                 }
 
-                const file = req.files[fieldName][0]; // Multer stores files in an array
+                const file = req.files[fieldName][0];
                 const fileName = `${Date.now()}_${file.originalname}`;
                 const filePath = path.join(targetFolder, fileName);
 
-                // Move the uploaded file
+
                 fs.renameSync(file.path, filePath);
                 return `/${folder}/${fileName}`;
 
             } else if (req.body[`${fieldName}_url`] && req.body[`${fieldName}_url`] !== existingUrl) {
-                // New URL is provided and it's different from existing one
+
                 if (existingUrl && !existingUrl.startsWith('http')) {
                     const oldFilePath = path.join(publicBasePath, existingUrl);
                     if (fs.existsSync(oldFilePath)) {
@@ -140,10 +140,10 @@ class MovieController {
                 return req.body[`${fieldName}_url`];
             }
 
-            // Return existing URL if no changes
+
             return existingUrl;
         } catch (error) {
-            console.error(`Error handling file upload for ${fieldName}:`, error);
+            console.error(`Lỗi xử lý tải lên file cho ${fieldName}:`, error);
             throw error;
         }
     }
@@ -153,7 +153,7 @@ class MovieController {
             if (!req.body.name || !req.body.slug || !req.body.type || !req.body.category) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Missing required fields'
+                    message: 'Thiếu các trường bắt buộc'
                 });
             }
 
@@ -161,7 +161,7 @@ class MovieController {
             if (existingMovie) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Slug must be unique'
+                    message: 'Slug phải là duy nhất'
                 });
             }
 
@@ -177,7 +177,7 @@ class MovieController {
                 director: req.body.director?.split(',').map(d => d.trim()) || [],
                 year: req.body.year ? parseInt(req.body.year) : new Date().getFullYear(),
                 genres: req.body.genres?.split(',').map(g => g.trim()) || [],
-                country: req.body.country || 'Unknown',
+                country: req.body.country || 'Không xác định',
                 poster_url: posterUrl,
                 thumbnail_url: thumbnailUrl,
                 trailer_url: trailerUrl,
@@ -185,15 +185,15 @@ class MovieController {
 
             return res.status(201).json({
                 success: true,
-                message: 'Movie created successfully',
+                message: 'Tạo phim thành công',
                 data: movie
             });
 
         } catch (error) {
-            console.error('Error creating movie:', error);
+            console.error('Lỗi tạo phim:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Internal server error: ' + error.message,
+                message: 'Lỗi server nội bộ: ' + error.message,
                 error: error.message
             });
         }
@@ -205,17 +205,17 @@ class MovieController {
             if (!movie) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Movie not found',
-                    error: error.message
+                    message: 'Không tìm thấy phim',
+                    error: 'Phim không tồn tại với ID đã cho'
                 })
             }
 
             const categories = await Category.find();
             return res.json({ movie, categories });
         } catch (error) {
-            console.error('Error in movie edit form:', error);
+            console.error('Lỗi form chỉnh sửa phim:', error);
             return res.status(500).json({
-                message: 'Error loading edit form',
+                message: 'Lỗi tải form chỉnh sửa',
                 error: { status: 500, stack: error.stack }
             });
         }
@@ -227,18 +227,18 @@ class MovieController {
             if (!movie) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Movie not found'
+                    message: 'Không tìm thấy phim'
                 });
             }
 
             if (!req.body.name || !req.body.slug || !req.body.type || !req.body.category) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Missing required fields'
+                    message: 'Thiếu các trường bắt buộc'
                 });
             }
 
-            // Check if the new slug already exists with another movie
+
             if (req.body.slug !== movie.slug) {
                 const existingMovie = await Movie.findOne({
                     slug: req.body.slug,
@@ -248,17 +248,17 @@ class MovieController {
                 if (existingMovie) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Slug must be unique'
+                        message: 'Slug phải là duy nhất'
                     });
                 }
             }
 
-            // Handle file uploads
+
             const posterUrl = await this.handleFileUpload(req, 'poster', 'posters', movie.poster_url);
             const trailerUrl = await this.handleFileUpload(req, 'trailer', 'trailers', movie.trailer_url);
             const thumbnailUrl = await this.handleFileUpload(req, 'thumbnail', 'thumbnails', movie.thumbnail_url);
 
-            // Update movie fields
+
             movie.slug = req.body.slug;
             movie.name = req.body.name;
             movie.origin_name = req.body.origin_name || req.body.name;
@@ -278,14 +278,14 @@ class MovieController {
 
             return res.json({
                 success: true,
-                message: 'Movie updated successfully',
+                message: 'Cập nhật phim thành công',
                 data: movie
             });
         } catch (error) {
-            console.error('Error updating movie:', error);
+            console.error('Lỗi cập nhật phim:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Error updating movie: ' + error.message,
+                message: 'Lỗi cập nhật phim: ' + error.message,
                 error: error.message
             });
         }
@@ -295,7 +295,7 @@ class MovieController {
         try {
             const movie = await Movie.findById(req.params.id);
             if (!movie) {
-                return res.status(404).json({ success: false, message: 'Movie not found' });
+                return res.status(404).json({ success: false, message: 'Không tìm thấy phim' });
             }
 
             if (movie.poster_url && fs.existsSync(path.join(__dirname, '../../public', movie.poster_url))) {
@@ -312,13 +312,13 @@ class MovieController {
 
             return res.status(201).json({
                 success: true,
-                message: 'Movie deleted successfully'
+                message: 'Xóa phim thành công'
             });
         } catch (error) {
-            console.error('Error deleting movie:', error);
+            console.error('Lỗi xóa phim:', error);
             return res.status(500).json({
                 success: false,
-                message: 'Error deleting movie: ' + error.message
+                message: 'Lỗi xóa phim: ' + error.message
             });
         }
     }

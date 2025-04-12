@@ -1,6 +1,6 @@
 const User = require('../../models/User');
 
-// Get all users with pagination and search
+
 exports.getAllUsers = async (req, res) => {
     const { page = 1, limit = 10, search = '' } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -10,7 +10,7 @@ exports.getAllUsers = async (req, res) => {
         const searchCriteria = search
             ? {
                 $or: [
-                    { username: { $regex: search, $options: 'i' } }, // Case-insensitive search
+                    { username: { $regex: search, $options: 'i' } },
                     { email: { $regex: search, $options: 'i' } },
                     { full_name: { $regex: search, $options: 'i' } }
                 ],
@@ -18,8 +18,8 @@ exports.getAllUsers = async (req, res) => {
             : {};
 
         const users = await User.find(searchCriteria)
-            .select('-password') // Exclude password from results
-            .sort({ createdAt: -1 }) // Sort by creation date descending
+            .select('-password')
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(queryLimit);
 
@@ -32,41 +32,41 @@ exports.getAllUsers = async (req, res) => {
             users: users,
         });
     } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ message: 'Error fetching users', error: error.message });
+        console.error('Lỗi lấy danh sách người dùng:', error);
+        res.status(500).json({ message: 'Lỗi lấy danh sách người dùng', error: error.message });
     }
 };
 
-// Get user by ID
+
 exports.getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
         res.status(200).json(user);
     } catch (error) {
-        console.error('Error fetching user by ID:', error);
-        // Handle potential CastError if ID format is invalid
+        console.error('Lỗi lấy người dùng theo ID:', error);
+
         if (error.name === 'CastError') {
-            return res.status(400).json({ message: 'Invalid user ID format' });
+            return res.status(400).json({ message: 'Định dạng ID người dùng không hợp lệ' });
         }
-        res.status(500).json({ message: 'Error fetching user details', error: error.message });
+        res.status(500).json({ message: 'Lỗi lấy chi tiết người dùng', error: error.message });
     }
 };
 
-// Update user details (e.g., role, full_name)
+
 exports.updateUser = async (req, res) => {
     const { role, full_name, email } = req.body;
     const userId = req.params.id;
     const updateData = {};
 
-    // Only include fields in updateData if they are provided in the request
+
     if (role !== undefined) {
-        // Validate role against the schema enum
+
         const allowedRoles = User.schema.path('role').enumValues;
         if (!allowedRoles.includes(role)) {
-            return res.status(400).json({ message: `Invalid role specified. Allowed roles are: ${allowedRoles.join(', ')}` });
+            return res.status(400).json({ message: `Vai trò không hợp lệ. Các vai trò được phép là: ${allowedRoles.join(', ')}` });
         }
         updateData.role = role;
     }
@@ -74,67 +74,67 @@ exports.updateUser = async (req, res) => {
         updateData.full_name = full_name;
     }
     if (email !== undefined) {
-        // Validate email format
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
+            return res.status(400).json({ message: 'Định dạng email không hợp lệ' });
         }
         updateData.email = email;
     }
-    // Add other updatable fields here if needed
+
 
     if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ message: 'No update data provided.' });
+        return res.status(400).json({ message: 'Không có dữ liệu cập nhật nào được cung cấp.' });
     }
 
     try {
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            { $set: updateData }, // Use $set to update only specified fields
-            { new: true, runValidators: true } // Return the updated document and run schema validators
-        ).select('-password'); // Exclude password from the returned object
+            { $set: updateData },
+            { new: true, runValidators: true }
+        ).select('-password');
 
         if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
 
-        res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+        res.status(200).json({ message: 'Cập nhật người dùng thành công', user: updatedUser });
     } catch (error) {
-        console.error('Error updating user:', error);
+        console.error('Lỗi cập nhật người dùng:', error);
 
         if (error.name === 'CastError') {
-            return res.status(400).json({ message: 'Invalid user ID format' });
+            return res.status(400).json({ message: 'Định dạng ID người dùng không hợp lệ' });
         }
 
         if (error.name === 'ValidationError') {
-            return res.status(400).json({ message: 'Validation Error' + error.message, errors: error.errors });
+            return res.status(400).json({ message: 'Lỗi xác thực: ' + error.message, errors: error.errors });
         }
-        res.status(500).json({ message: 'Error updating user' + error.message, error: error.message });
+        res.status(500).json({ message: 'Lỗi cập nhật người dùng: ' + error.message, error: error.message });
     }
 };
 
-// Delete user
+
 exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Không tìm thấy người dùng' });
         }
 
 
         if (user._id.toString() === req.user.id) {
 
-            return res.status(400).json({ message: "Cannot delete your own account." });
+            return res.status(400).json({ message: "Không thể xóa tài khoản của chính bạn." });
         }
 
-        res.status(200).json({ message: 'User deleted successfully', userId: user._id });
+        res.status(200).json({ message: 'Xóa người dùng thành công', userId: user._id });
     } catch (error) {
-        console.error('Error deleting user:', error);
+        console.error('Lỗi xóa người dùng:', error);
 
         if (error.name === 'CastError') {
-            return res.status(400).json({ message: 'Invalid user ID format' });
+            return res.status(400).json({ message: 'Định dạng ID người dùng không hợp lệ' });
         }
-        res.status(500).json({ message: 'Error deleting user' + error.message, error: error.message });
+        res.status(500).json({ message: 'Lỗi xóa người dùng: ' + error.message, error: error.message });
     }
 };

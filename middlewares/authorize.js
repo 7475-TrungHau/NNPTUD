@@ -30,7 +30,6 @@ const authorize = (...roles) => {
             });
         }
         req.user = user;
-        // Log roles for debugging
 
         if (!roles.includes(user.role)) {
             return res.status(403).json({

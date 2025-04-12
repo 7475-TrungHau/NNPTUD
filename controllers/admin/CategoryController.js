@@ -10,7 +10,7 @@ exports.index = async (req, res) => {
 };
 
 exports.create = (req, res) => {
-    res.json({ success: true }); // Trả về view tạo mới nếu cần
+    res.json({ success: true });
 };
 
 exports.store = async (req, res) => {
@@ -27,7 +27,7 @@ exports.edit = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
         if (!category) {
-            return res.status(404).json({ success: false, message: 'Category not found' });
+            return res.status(404).json({ success: false, message: 'Không tìm thấy danh mục' });
         }
         res.json({ success: true, data: category });
     } catch (err) {
@@ -52,7 +52,7 @@ exports.update = async (req, res) => {
 exports.destroy = async (req, res) => {
     try {
         await Category.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: 'Category deleted successfully' });
+        res.json({ success: true, message: 'Xóa danh mục thành công' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

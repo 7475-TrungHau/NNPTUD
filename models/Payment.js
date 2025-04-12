@@ -35,7 +35,7 @@ const paymentSchema = new Schema({
         type: String,
         index: true,
         unique: true,
-        sparse: true // Cho phép null nhưng nếu có thì phải unique
+        sparse: true
     },
     payment_date: {
         type: Date,
